@@ -1,0 +1,77 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/jdbc
+         http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+         http://www.springframework.org/schema/tx
+         http://www.springframework.org/schema/tx/spring-tx.xsd
+         http://www.springframework.org/schema/data/jpa
+         http://www.springframework.org/schema/data/jpa/spring-jpa.xsd"
+         >
+
+    <!-- Change DB by comment/uncomment property-placeholder -->
+
+    <context:property-placeholder location="classpath:/db/postgres.properties" system-properties-mode="OVERRIDE"/>
+
+    <jpa:repositories base-package="ru.pavel2107.**.repository" />
+
+    <!--
+            <bean class = "org.springframework.jdbc.datasource.DriverManagerDataSource" id = "dataSource">
+                <property value="${database.driverClassName}" name="driverClassName"/>
+                <property value="${database.url}" name="url"/>
+                <property value="${database.username}" name="username"/>
+                <property value="${database.password}" name="password"/>
+            </bean>
+    -->
+    <!--tomcat pooling-->
+    <!-- пул томкета отключил, чтобы быстрее стартовал, компьютер слабоват
+    -->
+    <bean class="org.apache.tomcat.jdbc.pool.DataSource" id="dataSource">
+        <property value="${database.driverClassName}" name="driverClassName"/>
+        <property value="${database.url}" name="url"/>
+        <property value="${database.username}" name="username"/>
+        <property value="${database.password}" name="password"/>
+    </bean>
+
+
+    <jdbc:initialize-database data-source="dataSource" enabled="true">
+        <jdbc:script location="classpath:/db/initDB.sql"/>
+        <jdbc:script encoding="utf-8" location="classpath:/db/populateDB.sql"/>
+    </jdbc:initialize-database>
+
+
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean"
+          p:dataSource-ref="dataSource"
+          p:packagesToScan="ru.pavel2107.**.model">
+
+        <property name="jpaPropertyMap">
+            <map>
+                <entry key="#{T(org.hibernate.cfg.AvailableSettings).FORMAT_SQL}" value="${hibernate.format_sql}"/>
+                <entry key="#{T(org.hibernate.cfg.AvailableSettings).USE_SQL_COMMENTS}" value="${hibernate.use_sql_comments}"/>
+            </map>
+        </property>
+
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"
+                  p:showSql="${jpa.showSql}">
+            </bean>
+        </property>
+    </bean>
+
+    <tx:annotation-driven/>
+
+    <!-- Transaction manager for a single JPA EntityManagerFactory (alternative to JTA) -->
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager"
+          p:entityManagerFactory-ref="entityManagerFactory"/>
+
+
+
+</beans>

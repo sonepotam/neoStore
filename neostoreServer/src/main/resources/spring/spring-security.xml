@@ -1,0 +1,56 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/security
+		http://www.springframework.org/schema/security/spring-security.xsd">
+
+
+
+
+    <http pattern="/resources/**" security="none"/>
+    <http pattern="/rest/anonym/**" security="none"/>
+
+    <http pattern="/rest/auth/**"
+          use-expressions="true"
+          name="restSecurityFilterChain"
+          entry-point-ref="authenticationEntryPoint"
+          create-session="stateless"  >
+        <http-basic entry-point-ref="authenticationEntryPoint"/>
+        <intercept-url pattern="/**" access="isAuthenticated()"/>
+        <csrf disabled="true"/>
+    </http>
+
+
+    <http auto-config='true'>
+        <intercept-url pattern="/**"  />
+    </http>
+
+
+
+<beans:bean id="authenticationEntryPoint"
+      class="ru.pavel2107.neostoreRest.utils.Resp401BasicAuthenticationEntryPoint">
+     <beans:property name="realmName" value="neoStore"/>
+</beans:bean>
+
+
+    <beans:bean id="passwordEncoder" class="ru.pavel2107.neostoreRest.utils.PasswordUtil" factory-method="getPasswordEncoder" />
+
+
+    <beans:bean id="authenticationProvider"
+                class="ru.pavel2107.neostoreRest.web.LimitLoginAuthenticationProvider">
+        <beans:property name="userDetailsService" ref="userService" />
+        <beans:property name="userDetailsDao" ref="userService" />
+
+        <beans:property name="passwordEncoder" ref="passwordEncoder" />
+
+    </beans:bean>
+
+    <authentication-manager alias="authenticationManager">
+        <authentication-provider ref="authenticationProvider" />
+    </authentication-manager>
+
+
+
+</beans:beans>
